@@ -1,0 +1,76 @@
+import openpyxl
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.select import Select
+from time import sleep
+import pandas as pd
+from openpyxl import Workbook
+from openpyxl.utils.dataframe import dataframe_to_rows
+
+#Na lista abaixo, basta adicionar os números dos convênios procurados podendo colocar de 1 até n convênios de uma vez, o bot vai buscar todos.
+convenios = ['938802','928174']
+
+#Abrindo a planilha destino
+workbook_destino = openpyxl.Workbook()
+
+#Loop para buscar convênio a convênio
+for convenio in convenios:
+    driver = webdriver.Chrome()
+    driver.get('https://discricionarias.transferegov.sistema.gov.br/voluntarias/Principal/Principal.do?Usr=guest&Pwd=guest')
+    sleep(5)
+
+    click1 = driver.find_element(By.XPATH, "//*[@id='menuPrincipal']/div[1]/div[4]")
+    click1.click()
+    sleep(5)
+
+    click2 = driver.find_element(By.XPATH, "//*[@id='contentMenu']/div/ul/li/a")
+    click2.click()
+    sleep(5)
+
+    caixa_convenio = driver.find_element(By.XPATH, "//input[@name='numeroConvenio']")
+    caixa_convenio.send_keys(convenio)
+    caixa_convenio.send_keys(Keys.ENTER)
+    sleep(5)
+
+    click3 = driver.find_element(By.XPATH, "//*[@id='tbodyrow']/tr/td[1]/div/a")
+    click3.click()
+    sleep(5)
+
+    click4 = driver.find_element(By.XPATH, "//*[@id='div_-1941304600']/span/span")
+    click4.click()
+    sleep(3)
+
+    click5 = driver.find_element(By.XPATH, "//*[@id='menu_link_-1941304600_-1941304600']/div/span/span")
+    click5.click()
+    sleep(4)
+
+    click6 = driver.find_element(By.XPATH, "//*[@id='tabViewMandatarias']/ul/li[6]/a")
+    click6.click()
+    sleep(4)
+
+    click7 = driver.find_element(By.XPATH, "//*[@id='tabViewMandatarias:frmPoDadosGeraisListagem:idPoDataTableLista:0:btnDetalhar']/span[1]")
+    click7.click()
+    sleep(4)
+
+    click8 = driver.find_element(By.XPATH, "//*[@id='tabViewMandatarias:poTab']/ul/li[4]/a")
+    click8.click()
+    sleep(4)
+
+    tabela_elemento = driver.find_element(By.XPATH, "//*[@id='tabViewMandatarias:poTab:frmItensPo:idItensPoDataTableLista']/div/table")
+
+    html_tabela = tabela_elemento.get_attribute('outerHTML')
+    df = pd.read_html(html_tabela)[0]
+    nova_aba = workbook_destino.create_sheet(title=convenio)
+    dados = list(dataframe_to_rows(df, index=False, header=False))
+    
+    for dado in dados:
+        nova_aba.append(dado)
+        
+    workbook_destino.save('planilhas.xlsx')
+
+    sleep(5)
+    driver.quit()
+
+#Após raspagem, print confirmando os prints. Agora, só ir até a planilha salva.
+print("As planilhas orçamentárias foram impressas com sucesso!")
